@@ -1,0 +1,22 @@
+name = "usaa-backend"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[kv_namespaces]]
+binding = "USAA_CONTROLLERS"
+id = "5bc0645065854c7589115e84f3da26c7"
+preview_id = "e4f518710ca74502b7d693541753fb4f"
+
+[build]
+command = ""
+
+[env.development]
+name = "usaa-backend-dev"
+
+[[env.development.kv_namespaces]]
+binding = "USAA_CONTROLLERS"
+id = "5bc0645065854c7589115e84f3da26c7"
+preview_id = "e4f518710ca74502b7d693541753fb4f"
