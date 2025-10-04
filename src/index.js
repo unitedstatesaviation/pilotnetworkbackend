@@ -35,9 +35,9 @@ function getCurrentTimestamp() {
   return new Date().toISOString();
 }
 
-// Helper function to generate controller key for KV storage
-function getControllerKey(cid) {
-  return `controller:${cid}`;
+// Helper function to generate pilot key for KV storage
+function getPilotKey(cid) {
+  return `pilot:${cid}`;
 }
 
 // Helper function to generate callsign index key
@@ -58,54 +58,54 @@ router.get('/', () => {
   return jsonResponse({
     name: 'United States Aviation Administrator (USAA) API',
     version: '1.0.0',
-    description: 'API for tracking aviation controllers and network status',
+    description: 'API for tracking aviation pilots and flight status',
     endpoints: {
       'GET /': 'API information',
-      'GET /controllers': 'List all online controllers',
-      'GET /controllers/:cid': 'Get specific controller by CID',
-      'GET /callsign/:callsign': 'Get controller by callsign',
-      'POST /controllers/online': 'Set controller as online',
-      'POST /controllers/offline': 'Set controller as offline',
-      'DELETE /controllers/:cid': 'Remove controller from tracking'
+      'GET /pilots': 'List all online pilots',
+      'GET /pilots/:cid': 'Get specific pilot by CID',
+      'GET /callsign/:callsign': 'Get pilot by callsign',
+      'POST /pilots/online': 'Set pilot as online',
+      'POST /pilots/offline': 'Set pilot as offline',
+      'DELETE /pilots/:cid': 'Remove pilot from tracking'
     }
   });
 });
 
-// GET /controllers - List all online controllers
-router.get('/controllers', async (request, env) => {
+// GET /pilots - List all online pilots
+router.get('/pilots', async (request, env) => {
   try {
-    // Get all controller keys
-    const list = await env.USAA_CONTROLLERS.list({ prefix: 'controller:' });
-    const controllers = [];
+    // Get all pilot keys
+    const list = await env.USAA_CONTROLLERS.list({ prefix: 'pilot:' });
+    const pilots = [];
 
-    // Fetch all controller data
+    // Fetch all pilot data
     for (const key of list.keys) {
-      const controllerData = await env.USAA_CONTROLLERS.get(key.name, 'json');
-      if (controllerData && controllerData.status === 'online') {
-        controllers.push(controllerData);
+      const pilotData = await env.USAA_CONTROLLERS.get(key.name, 'json');
+      if (pilotData && pilotData.status === 'online') {
+        pilots.push(pilotData);
       }
     }
 
     // Sort by online time (most recent first)
-    controllers.sort((a, b) => new Date(b.onlineTime) - new Date(a.onlineTime));
+    pilots.sort((a, b) => new Date(b.onlineTime) - new Date(a.onlineTime));
 
     return jsonResponse({
       success: true,
-      data: controllers,
-      count: controllers.length,
+      data: pilots,
+      count: pilots.length,
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to fetch controllers',
+      error: 'Failed to fetch pilots',
       details: error.message
     }, 500);
   }
 });
 
-// GET /controllers/:cid - Get specific controller by CID
-router.get('/controllers/:cid', async (request, env) => {
+// GET /pilots/:cid - Get specific pilot by CID
+router.get('/pilots/:cid', async (request, env) => {
   try {
     const { cid } = request.params;
     
@@ -116,30 +116,30 @@ router.get('/controllers/:cid', async (request, env) => {
       }, 400);
     }
 
-    const controllerData = await env.USAA_CONTROLLERS.get(getControllerKey(cid), 'json');
+    const pilotData = await env.USAA_CONTROLLERS.get(getPilotKey(cid), 'json');
     
-    if (!controllerData) {
+    if (!pilotData) {
       return jsonResponse({
         success: false,
-        error: 'Controller not found'
+        error: 'Pilot not found'
       }, 404);
     }
 
     return jsonResponse({
       success: true,
-      data: controllerData,
+      data: pilotData,
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to fetch controller',
+      error: 'Failed to fetch pilot',
       details: error.message
     }, 500);
   }
 });
 
-// GET /callsign/:callsign - Get controller by callsign
+// GET /callsign/:callsign - Get pilot by callsign
 router.get('/callsign/:callsign', async (request, env) => {
   try {
     const { callsign } = request.params;
@@ -161,40 +161,40 @@ router.get('/callsign/:callsign', async (request, env) => {
       }, 404);
     }
 
-    const controllerData = await env.USAA_CONTROLLERS.get(getControllerKey(cid), 'json');
+    const pilotData = await env.USAA_CONTROLLERS.get(getPilotKey(cid), 'json');
     
-    if (!controllerData) {
+    if (!pilotData) {
       return jsonResponse({
         success: false,
-        error: 'Controller data not found'
+        error: 'Pilot data not found'
       }, 404);
     }
 
     return jsonResponse({
       success: true,
-      data: controllerData,
+      data: pilotData,
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to fetch controller by callsign',
+      error: 'Failed to fetch pilot by callsign',
       details: error.message
     }, 500);
   }
 });
 
-// POST /controllers/online - Set controller as online
-router.post('/controllers/online', async (request, env) => {
+// POST /pilots/online - Set pilot as online
+router.post('/pilots/online', async (request, env) => {
   try {
     const body = await request.json();
-    const { cid, callsign } = body;
+    const { cid, callsign, departureAirport, arrivalAirport, airlineId, aircraftType } = body;
 
     // Validate input
-    if (!cid || !callsign) {
+    if (!cid || !callsign || !departureAirport || !arrivalAirport || !airlineId || !aircraftType) {
       return jsonResponse({
         success: false,
-        error: 'Missing required fields: cid and callsign'
+        error: 'Missing required fields: cid, callsign, departureAirport, arrivalAirport, airlineId, and aircraftType'
       }, 400);
     }
 
@@ -212,61 +212,96 @@ router.post('/controllers/online', async (request, env) => {
       }, 400);
     }
 
+    if (typeof departureAirport !== 'string' || departureAirport.length < 3) {
+      return jsonResponse({
+        success: false,
+        error: 'Invalid departure airport format. Must be at least 3 characters.'
+      }, 400);
+    }
+
+    if (typeof arrivalAirport !== 'string' || arrivalAirport.length < 3) {
+      return jsonResponse({
+        success: false,
+        error: 'Invalid arrival airport format. Must be at least 3 characters.'
+      }, 400);
+    }
+
+    if (typeof airlineId !== 'string' || airlineId.length < 2) {
+      return jsonResponse({
+        success: false,
+        error: 'Invalid airline ID format. Must be at least 2 characters.'
+      }, 400);
+    }
+
+    if (typeof aircraftType !== 'string' || aircraftType.length < 2) {
+      return jsonResponse({
+        success: false,
+        error: 'Invalid aircraft type format. Must be at least 2 characters.'
+      }, 400);
+    }
+
     const normalizedCallsign = callsign.toUpperCase();
-    const controllerKey = getControllerKey(cid);
+    const normalizedDeparture = departureAirport.toUpperCase();
+    const normalizedArrival = arrivalAirport.toUpperCase();
+    const normalizedAircraftType = aircraftType.toUpperCase();
+    const pilotKey = getPilotKey(cid);
     const callsignKey = getCallsignKey(normalizedCallsign);
     const currentTime = getCurrentTimestamp();
 
-    // Check if callsign is already in use by another controller
+    // Check if callsign is already in use by another pilot
     const existingCid = await env.USAA_CONTROLLERS.get(callsignKey);
     if (existingCid && existingCid !== cid.toString()) {
       return jsonResponse({
         success: false,
-        error: 'Callsign already in use by another controller'
+        error: 'Callsign already in use by another pilot'
       }, 409);
     }
 
-    // Get existing controller data if any
-    const existingController = await env.USAA_CONTROLLERS.get(controllerKey, 'json');
+    // Get existing pilot data if any
+    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
     
-    // If controller was using a different callsign, clean up old callsign mapping
-    if (existingController && existingController.callsign !== normalizedCallsign) {
-      const oldCallsignKey = getCallsignKey(existingController.callsign);
+    // If pilot was using a different callsign, clean up old callsign mapping
+    if (existingPilot && existingPilot.callsign !== normalizedCallsign) {
+      const oldCallsignKey = getCallsignKey(existingPilot.callsign);
       await env.USAA_CONTROLLERS.delete(oldCallsignKey);
     }
 
-    const controllerData = {
+    const pilotData = {
       cid: cid.toString(),
       callsign: normalizedCallsign,
+      departureAirport: normalizedDeparture,
+      arrivalAirport: normalizedArrival,
+      airlineId: airlineId,
+      aircraftType: normalizedAircraftType,
       status: 'online',
       onlineTime: currentTime,
       lastUpdate: currentTime,
-      ...(existingController && existingController.firstSeen ? { firstSeen: existingController.firstSeen } : { firstSeen: currentTime })
+      ...(existingPilot && existingPilot.firstSeen ? { firstSeen: existingPilot.firstSeen } : { firstSeen: currentTime })
     };
 
-    // Store controller data and callsign mapping
+    // Store pilot data and callsign mapping
     await Promise.all([
-      env.USAA_CONTROLLERS.put(controllerKey, JSON.stringify(controllerData)),
+      env.USAA_CONTROLLERS.put(pilotKey, JSON.stringify(pilotData)),
       env.USAA_CONTROLLERS.put(callsignKey, cid.toString())
     ]);
 
     return jsonResponse({
       success: true,
-      message: 'Controller set as online',
-      data: controllerData,
+      message: 'Pilot set as online',
+      data: pilotData,
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to set controller online',
+      error: 'Failed to set pilot online',
       details: error.message
     }, 500);
   }
 });
 
-// POST /controllers/offline - Set controller as offline
-router.post('/controllers/offline', async (request, env) => {
+// POST /pilots/offline - Set pilot as offline
+router.post('/pilots/offline', async (request, env) => {
   try {
     const body = await request.json();
     const { cid } = body;
@@ -278,48 +313,48 @@ router.post('/controllers/offline', async (request, env) => {
       }, 400);
     }
 
-    const controllerKey = getControllerKey(cid);
-    const existingController = await env.USAA_CONTROLLERS.get(controllerKey, 'json');
+    const pilotKey = getPilotKey(cid);
+    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
     
-    if (!existingController) {
+    if (!existingPilot) {
       return jsonResponse({
         success: false,
-        error: 'Controller not found'
+        error: 'Pilot not found'
       }, 404);
     }
 
     const currentTime = getCurrentTimestamp();
-    const controllerData = {
-      ...existingController,
+    const pilotData = {
+      ...existingPilot,
       status: 'offline',
       lastUpdate: currentTime,
       offlineTime: currentTime
     };
 
-    // Update controller data and remove callsign mapping
-    const callsignKey = getCallsignKey(existingController.callsign);
+    // Update pilot data and remove callsign mapping
+    const callsignKey = getCallsignKey(existingPilot.callsign);
     await Promise.all([
-      env.USAA_CONTROLLERS.put(controllerKey, JSON.stringify(controllerData)),
+      env.USAA_CONTROLLERS.put(pilotKey, JSON.stringify(pilotData)),
       env.USAA_CONTROLLERS.delete(callsignKey)
     ]);
 
     return jsonResponse({
       success: true,
-      message: 'Controller set as offline',
-      data: controllerData,
+      message: 'Pilot set as offline',
+      data: pilotData,
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to set controller offline',
+      error: 'Failed to set pilot offline',
       details: error.message
     }, 500);
   }
 });
 
-// DELETE /controllers/:cid - Remove controller from tracking
-router.delete('/controllers/:cid', async (request, env) => {
+// DELETE /pilots/:cid - Remove pilot from tracking
+router.delete('/pilots/:cid', async (request, env) => {
   try {
     const { cid } = request.params;
     
@@ -330,32 +365,32 @@ router.delete('/controllers/:cid', async (request, env) => {
       }, 400);
     }
 
-    const controllerKey = getControllerKey(cid);
-    const existingController = await env.USAA_CONTROLLERS.get(controllerKey, 'json');
+    const pilotKey = getPilotKey(cid);
+    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
     
-    if (!existingController) {
+    if (!existingPilot) {
       return jsonResponse({
         success: false,
-        error: 'Controller not found'
+        error: 'Pilot not found'
       }, 404);
     }
 
-    // Remove both controller data and callsign mapping
-    const callsignKey = getCallsignKey(existingController.callsign);
+    // Remove both pilot data and callsign mapping
+    const callsignKey = getCallsignKey(existingPilot.callsign);
     await Promise.all([
-      env.USAA_CONTROLLERS.delete(controllerKey),
+      env.USAA_CONTROLLERS.delete(pilotKey),
       env.USAA_CONTROLLERS.delete(callsignKey)
     ]);
 
     return jsonResponse({
       success: true,
-      message: 'Controller removed from tracking',
+      message: 'Pilot removed from tracking',
       timestamp: getCurrentTimestamp()
     });
   } catch (error) {
     return jsonResponse({
       success: false,
-      error: 'Failed to remove controller',
+      error: 'Failed to remove pilot',
       details: error.message
     }, 500);
   }

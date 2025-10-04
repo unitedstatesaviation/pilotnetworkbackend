@@ -1,7 +1,7 @@
 {
   "name": "usaa-backend",
   "version": "1.0.0",
-  "description": "United States Aviation Administrator (USAA) - Backend API for aviation controller tracking",
+  "description": "United States Aviation Administrator (USAA) - Backend API for aviation pilot tracking",
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
@@ -9,7 +9,7 @@
     "build": "wrangler build",
     "start": "wrangler dev --local"
   },
-  "keywords": ["usaa", "aviation", "administrator", "controller-tracking", "api", "cloudflare-workers"],
+  "keywords": ["usaa", "aviation", "administrator", "pilot-tracking", "api", "cloudflare-workers"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

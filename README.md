@@ -1,11 +1,13 @@
 # United States Aviation Administrator (USAA) Backend API
 
-A Cloudflare Workers-based backend API for the United States Aviation Administrator (USAA) system. This API tracks and manages aviation controller data including callsign, Controller ID (CID), and online time for comprehensive aviation network monitoring.
+A Cloudflare Workers-based backend API for the United States Aviation Administrator (USAA) system. This API tracks and manages aviation pilot data including departure airport, arrival airport, CID, callsign, airline ID, and aircraft type for comprehensive flight network monitoring.
 
 ## Features
 
-- Track aviation controller online/offline status
-- Store callsign and CID mapping for USAA network
+- Track aviation pilot online/offline status
+- Store pilot flight information with departure/arrival airports
+- Track airline ID and aircraft type for each flight
+- Map callsigns to pilot CIDs for USAA network
 - RESTful API with JSON responses
 - CORS support for web applications
 - Deployable to Cloudflare Workers or Pages
@@ -17,8 +19,8 @@ A Cloudflare Workers-based backend API for the United States Aviation Administra
 ### GET /
 Returns API information and available endpoints.
 
-### GET /controllers
-Returns a list of all currently online controllers, sorted by most recent online time.
+### GET /pilots
+Returns a list of all currently online pilots, sorted by most recent online time.
 
 **Response:**
 ```json
@@ -27,7 +29,11 @@ Returns a list of all currently online controllers, sorted by most recent online
   "data": [
     {
       "cid": "1234567",
-      "callsign": "LAX_TWR",
+      "callsign": "UAL123",
+      "departureAirport": "KLAX",
+      "arrivalAirport": "KJFK",
+      "airlineId": "UAL",
+      "aircraftType": "B737",
       "status": "online",
       "onlineTime": "2024-01-01T12:00:00.000Z",
       "lastUpdate": "2024-01-01T12:00:00.000Z",
@@ -39,26 +45,30 @@ Returns a list of all currently online controllers, sorted by most recent online
 }
 ```
 
-### GET /controllers/:cid
-Returns information about a specific controller by their CID.
+### GET /pilots/:cid
+Returns information about a specific pilot by their CID.
 
 **Parameters:**
-- `cid` - Controller ID (numeric)
+- `cid` - Pilot ID (numeric)
 
 ### GET /callsign/:callsign
-Returns controller information by their callsign.
+Returns pilot information by their callsign.
 
 **Parameters:**
-- `callsign` - Controller callsign (case-insensitive)
+- `callsign` - Pilot callsign (case-insensitive)
 
-### POST /controllers/online
-Sets a controller as online.
+### POST /pilots/online
+Sets a pilot as online.
 
 **Body:**
 ```json
 {
   "cid": "1234567",
-  "callsign": "LAX_TWR"
+  "callsign": "UAL123",
+  "departureAirport": "KLAX",
+  "arrivalAirport": "KJFK",
+  "airlineId": "UAL",
+  "aircraftType": "B737"
 }
 ```
 
@@ -66,10 +76,14 @@ Sets a controller as online.
 ```json
 {
   "success": true,
-  "message": "Controller set as online",
+  "message": "Pilot set as online",
   "data": {
     "cid": "1234567",
-    "callsign": "LAX_TWR",
+    "callsign": "UAL123",
+    "departureAirport": "KLAX",
+    "arrivalAirport": "KJFK",
+    "airlineId": "UAL",
+    "aircraftType": "B737",
     "status": "online",
     "onlineTime": "2024-01-01T12:00:00.000Z",
     "lastUpdate": "2024-01-01T12:00:00.000Z",
@@ -79,8 +93,8 @@ Sets a controller as online.
 }
 ```
 
-### POST /controllers/offline
-Sets a controller as offline.
+### POST /pilots/offline
+Sets a pilot as offline.
 
 **Body:**
 ```json
@@ -89,11 +103,11 @@ Sets a controller as offline.
 }
 ```
 
-### DELETE /controllers/:cid
-Removes a controller from tracking completely.
+### DELETE /pilots/:cid
+Removes a pilot from tracking completely.
 
 **Parameters:**
-- `cid` - Controller ID (numeric)
+- `cid` - Pilot ID (numeric)
 
 ## Setup and Deployment
 
@@ -145,8 +159,23 @@ Configure these in your `wrangler.toml` or Cloudflare dashboard:
 
 The API uses Cloudflare KV for data persistence with the following key patterns:
 
-- `controller:{cid}` - Stores controller data
+- `pilot:{cid}` - Stores pilot data
 - `callsign:{CALLSIGN}` - Maps callsigns to CIDs
+
+## Pilot Data Structure
+
+Each pilot record contains the following fields:
+- `cid` - Pilot ID (numeric string)
+- `callsign` - Aircraft callsign (uppercase)
+- `departureAirport` - ICAO code for departure airport (e.g., "KLAX")
+- `arrivalAirport` - ICAO code for arrival airport (e.g., "KJFK")
+- `airlineId` - Airline identifier code (e.g., "UAL", "AAL")
+- `aircraftType` - Aircraft type code (e.g., "B737", "A320")
+- `status` - "online" or "offline"
+- `onlineTime` - ISO timestamp when pilot came online
+- `lastUpdate` - ISO timestamp of last update
+- `firstSeen` - ISO timestamp when pilot was first tracked
+- `offlineTime` - ISO timestamp when pilot went offline (if applicable)
 
 ## Error Handling
 
