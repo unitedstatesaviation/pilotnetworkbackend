@@ -164,6 +164,8 @@ The API uses Cloudflare KV for data persistence with the following key patterns:
 - `pilot:{cid}` - Stores pilot data
 - `callsign:{CALLSIGN}` - Maps callsigns to CIDs
 
+**KV Namespace:** `USAA_PILOTS`
+
 ## Pilot Data Structure
 
 Each pilot record contains the following fields:
