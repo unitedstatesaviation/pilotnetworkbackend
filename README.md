@@ -126,8 +126,8 @@ npm install
 2. Configure Cloudflare KV namespace:
 ```bash
 # Create KV namespace
-wrangler kv:namespace create "USAA_CONTROLLERS"
-wrangler kv:namespace create "USAA_CONTROLLERS" --preview
+wrangler kv:namespace create "USAA_PILOTS"
+wrangler kv:namespace create "USAA_PILOTS" --preview
 
 # Update wrangler.toml with the namespace IDs returned from above commands
 ```
@@ -149,6 +149,8 @@ Deploy to Cloudflare Workers:
 ```bash
 npm run deploy
 ```
+
+**Live API URL:** https://usaa-pilot-tracker.sebpartof2.workers.dev
 
 ### Environment Variables
 
