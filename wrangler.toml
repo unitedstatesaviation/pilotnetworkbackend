@@ -1,4 +1,4 @@
-name = "usaa-backend"
+name = "usaa-pilot-tracker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
@@ -6,17 +6,17 @@ compatibility_date = "2024-01-01"
 ENVIRONMENT = "production"
 
 [[kv_namespaces]]
-binding = "USAA_CONTROLLERS"
-id = "5bc0645065854c7589115e84f3da26c7"
-preview_id = "e4f518710ca74502b7d693541753fb4f"
+binding = "USAA_PILOTS"
+id = "47bc476c9bb04bdea4a4eb5424122e60"
+preview_id = "fbffca54ee214babb24f933f7873c772"
 
 [build]
 command = ""
 
 [env.development]
-name = "usaa-backend-dev"
+name = "usaa-pilot-tracker-dev"
 
 [[env.development.kv_namespaces]]
-binding = "USAA_CONTROLLERS"
-id = "5bc0645065854c7589115e84f3da26c7"
-preview_id = "e4f518710ca74502b7d693541753fb4f"
+binding = "USAA_PILOTS"
+id = "47bc476c9bb04bdea4a4eb5424122e60"
+preview_id = "fbffca54ee214babb24f933f7873c772"

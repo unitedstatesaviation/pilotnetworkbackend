@@ -75,12 +75,12 @@ router.get('/', () => {
 router.get('/pilots', async (request, env) => {
   try {
     // Get all pilot keys
-    const list = await env.USAA_CONTROLLERS.list({ prefix: 'pilot:' });
+    const list = await env.USAA_PILOTS.list({ prefix: 'pilot:' });
     const pilots = [];
 
     // Fetch all pilot data
     for (const key of list.keys) {
-      const pilotData = await env.USAA_CONTROLLERS.get(key.name, 'json');
+      const pilotData = await env.USAA_PILOTS.get(key.name, 'json');
       if (pilotData && pilotData.status === 'online') {
         pilots.push(pilotData);
       }
@@ -116,7 +116,7 @@ router.get('/pilots/:cid', async (request, env) => {
       }, 400);
     }
 
-    const pilotData = await env.USAA_CONTROLLERS.get(getPilotKey(cid), 'json');
+    const pilotData = await env.USAA_PILOTS.get(getPilotKey(cid), 'json');
     
     if (!pilotData) {
       return jsonResponse({
@@ -152,7 +152,7 @@ router.get('/callsign/:callsign', async (request, env) => {
     }
 
     const callsignKey = getCallsignKey(callsign);
-    const cid = await env.USAA_CONTROLLERS.get(callsignKey);
+    const cid = await env.USAA_PILOTS.get(callsignKey);
     
     if (!cid) {
       return jsonResponse({
@@ -161,7 +161,7 @@ router.get('/callsign/:callsign', async (request, env) => {
       }, 404);
     }
 
-    const pilotData = await env.USAA_CONTROLLERS.get(getPilotKey(cid), 'json');
+    const pilotData = await env.USAA_PILOTS.get(getPilotKey(cid), 'json');
     
     if (!pilotData) {
       return jsonResponse({
@@ -249,7 +249,7 @@ router.post('/pilots/online', async (request, env) => {
     const currentTime = getCurrentTimestamp();
 
     // Check if callsign is already in use by another pilot
-    const existingCid = await env.USAA_CONTROLLERS.get(callsignKey);
+    const existingCid = await env.USAA_PILOTS.get(callsignKey);
     if (existingCid && existingCid !== cid.toString()) {
       return jsonResponse({
         success: false,
@@ -258,12 +258,12 @@ router.post('/pilots/online', async (request, env) => {
     }
 
     // Get existing pilot data if any
-    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
+    const existingPilot = await env.USAA_PILOTS.get(pilotKey, 'json');
     
     // If pilot was using a different callsign, clean up old callsign mapping
     if (existingPilot && existingPilot.callsign !== normalizedCallsign) {
       const oldCallsignKey = getCallsignKey(existingPilot.callsign);
-      await env.USAA_CONTROLLERS.delete(oldCallsignKey);
+      await env.USAA_PILOTS.delete(oldCallsignKey);
     }
 
     const pilotData = {
@@ -281,8 +281,8 @@ router.post('/pilots/online', async (request, env) => {
 
     // Store pilot data and callsign mapping
     await Promise.all([
-      env.USAA_CONTROLLERS.put(pilotKey, JSON.stringify(pilotData)),
-      env.USAA_CONTROLLERS.put(callsignKey, cid.toString())
+      env.USAA_PILOTS.put(pilotKey, JSON.stringify(pilotData)),
+      env.USAA_PILOTS.put(callsignKey, cid.toString())
     ]);
 
     return jsonResponse({
@@ -314,7 +314,7 @@ router.post('/pilots/offline', async (request, env) => {
     }
 
     const pilotKey = getPilotKey(cid);
-    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
+    const existingPilot = await env.USAA_PILOTS.get(pilotKey, 'json');
     
     if (!existingPilot) {
       return jsonResponse({
@@ -334,8 +334,8 @@ router.post('/pilots/offline', async (request, env) => {
     // Update pilot data and remove callsign mapping
     const callsignKey = getCallsignKey(existingPilot.callsign);
     await Promise.all([
-      env.USAA_CONTROLLERS.put(pilotKey, JSON.stringify(pilotData)),
-      env.USAA_CONTROLLERS.delete(callsignKey)
+      env.USAA_PILOTS.put(pilotKey, JSON.stringify(pilotData)),
+      env.USAA_PILOTS.delete(callsignKey)
     ]);
 
     return jsonResponse({
@@ -366,7 +366,7 @@ router.delete('/pilots/:cid', async (request, env) => {
     }
 
     const pilotKey = getPilotKey(cid);
-    const existingPilot = await env.USAA_CONTROLLERS.get(pilotKey, 'json');
+    const existingPilot = await env.USAA_PILOTS.get(pilotKey, 'json');
     
     if (!existingPilot) {
       return jsonResponse({
@@ -378,8 +378,8 @@ router.delete('/pilots/:cid', async (request, env) => {
     // Remove both pilot data and callsign mapping
     const callsignKey = getCallsignKey(existingPilot.callsign);
     await Promise.all([
-      env.USAA_CONTROLLERS.delete(pilotKey),
-      env.USAA_CONTROLLERS.delete(callsignKey)
+      env.USAA_PILOTS.delete(pilotKey),
+      env.USAA_PILOTS.delete(callsignKey)
     ]);
 
     return jsonResponse({
