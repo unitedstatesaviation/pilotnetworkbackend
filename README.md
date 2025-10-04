@@ -152,6 +152,15 @@ npm run deploy
 
 **Live API URL:** https://usaa-pilot-tracker.sebpartof2.workers.dev
 
+**Production URL:** https://pilotnet.unitedstatesaviation.us
+
+## Documentation
+
+- 📘 **[Pilot Client Guide](PILOT_CLIENT_GUIDE.md)** - Complete instructions for pilot clients
+- 🚀 **[Production Deployment](PRODUCTION_DEPLOYMENT.md)** - Production setup and deployment guide  
+- ⚡ **[Quick Reference](QUICK_REFERENCE.md)** - Quick reference for developers and pilots
+- 💡 **[Usage Examples](examples/usage.md)** - Code examples in multiple languages
+
 ### Environment Variables
 
 Configure these in your `wrangler.toml` or Cloudflare dashboard:
